@@ -142,6 +142,39 @@ class TestAccountService(TestCase):
         response = self.client.get(f"{BASE_URL}/0")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_update_account(self):
+        """It should Update an existing Account"""
+        account_data = AccountFactory(name="Jane").serialize()
+        response = self.client.post(BASE_URL, json=account_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        account_id = response.get_json()["id"]
+
+        account_data["name"] = "Janet"
+        response = self.client.put(f"{BASE_URL}/{account_id}", json=account_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get_json()["name"], "Janet")
+
+        # The change is stored: reading it back returns the updated account
+        response = self.client.get(f"{BASE_URL}/{account_id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account_data["id"] = account_id
+        self.assertEqual(response.get_json(), account_data)
+
+    def test_update_account_not_found(self):
+        """It should not Update an Account that is not found"""
+        response = self.client.put(f"{BASE_URL}/0", json=AccountFactory().serialize())
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_account_unsupported_media_type(self):
+        """It should not Update an Account when sending the wrong media type"""
+        account = self._create_accounts(1)[0]
+        response = self.client.put(
+            f"{BASE_URL}/{account.id}",
+            data="name=Janet",
+            content_type="text/plain"
+        )
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
     def test_method_not_allowed(self):
         """It should not allow an illegal method call"""
         response = self.client.delete(BASE_URL)
