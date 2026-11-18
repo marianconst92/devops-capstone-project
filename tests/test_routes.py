@@ -123,4 +123,26 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    # ADD YOUR TEST CASES HERE ...
+    def test_read_an_account(self):
+        """It should Read a single Account"""
+        account_data = AccountFactory().serialize()
+        response = self.client.post(BASE_URL, json=account_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        account_id = response.get_json()["id"]
+
+        response = self.client.get(f"{BASE_URL}/{account_id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # The server assigns its own id; everything else must match what was sent
+        account_data["id"] = account_id
+        self.assertEqual(response.get_json(), account_data)
+
+    def test_account_not_found(self):
+        """It should not Read an Account that is not found"""
+        response = self.client.get(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_method_not_allowed(self):
+        """It should not allow an illegal method call"""
+        response = self.client.delete(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
