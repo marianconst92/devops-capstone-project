@@ -192,6 +192,24 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(response.data), 0)
 
+    def test_list_accounts(self):
+        """It should List all Accounts"""
+        accounts = self._create_accounts(5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 5)
+        self.assertEqual(
+            sorted(account["id"] for account in data),
+            sorted(account.id for account in accounts)
+        )
+
+    def test_list_accounts_empty(self):
+        """It should return an empty list when there are no Accounts"""
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get_json(), [])
+
     def test_method_not_allowed(self):
         """It should not allow an illegal method call"""
         response = self.client.delete(BASE_URL)
